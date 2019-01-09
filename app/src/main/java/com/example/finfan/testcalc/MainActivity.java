@@ -1,6 +1,7 @@
 package com.example.finfan.testcalc;
 
 import android.os.Bundle;
+import android.telecom.Call;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -22,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
 
     // button identify
     private TextView tvOutput, tvInput;
+    private boolean canUsePoint;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,7 +54,6 @@ public class MainActivity extends AppCompatActivity {
             next.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-
                     if(isOperateButton(next) && next.getId() == R.id.bEqual) {
 						double result = parse(toPostfixNotation(tvInput.getText().toString()));
 						if(result != result) {
@@ -97,12 +98,56 @@ public class MainActivity extends AppCompatActivity {
 				|| btnId == R.id.bMod;
     }
 
-    /**
+	private boolean isOperateButton(String postfix) {
+		return postfix.equalsIgnoreCase("-")
+				|| postfix.equalsIgnoreCase("+");
+	}
+
+	@Deprecated
+	private Button getButton(int id) {
+    	for(Button next : BUTTON_LIST) {
+    		if(next.getId() == id) {
+    			return next;
+			}
+		}
+
+		return null;
+	}
+
+	/**
      * Update input text view and insert the text name of clicked button
      */
     private void updateInput(String input) {
+    	if(!tvInput.getText().toString().isEmpty()) {
+    		final String inputText = tvInput.getText().toString();
+    		StringBuilder sb = new StringBuilder(inputText);
+			sb.append(input);
+			if(sb.toString().split("  ").length > 1) {
+				return;
+			}
+
+			sb = new StringBuilder(inputText);
+			if(input.equals(".") && !canUsePoint(sb.toString())) {
+				return;
+			}
+		}
+
     	tvInput.append(input);
     }
+
+    private boolean canUsePoint(String str) {
+		String[] splitter = str.split(" ");
+		for(String next : splitter) {
+			if(isNumber(next)) {
+				if(next.contains(".")) {
+					continue;
+				}
+				return true;
+			}
+		}
+
+		return false;
+	}
 
     /**
      * Show calculated results in cases:<br>
@@ -154,6 +199,10 @@ public class MainActivity extends AppCompatActivity {
 		String[] words = evaluation.split("\\s");
 		for(int i = 0; i < words.length; i++) {
 			final String word = words[i];
+			if(word == null || word.isEmpty()) {
+				return Double.NaN;
+			}
+
 			switch(word) {
 				case "+":
 					if(stack.size() < 2) {
